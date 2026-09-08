@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:vroom/screens/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:vroom/model/cart.dart';
+import 'package:vroom/screens/login_screen.dart';
+import 'package:vroom/view_model/auth_viewmodel.dart'; 
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => CartModel(),
+        ),
+        ChangeNotifierProvider(
+       
+          create: (context) => AuthViewModel(), 
+        ),
+      ],
+      child: const MyApp(), 
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -11,9 +27,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: const HomeScreen(),
+      home: const LoginScreen(),
       theme: ThemeData(
-        fontFamily: 'Roboto',
+        fontFamily: "Playwrite New Zealand Guides",
       ),
     );
   }

@@ -1,7 +1,7 @@
-
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:vroom/screens/login_screen.dart';
+import 'package:vroom/view_model/auth_viewmodel.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -19,7 +19,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _hidePassword = true;
   bool _hideConfirmPassword = true;
-   
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -170,27 +170,70 @@ class _SignupScreenState extends State<SignupScreen> {
 
                 const SizedBox(height: 24),
 
-                ElevatedButton(
-                  onPressed: () {
-                    if (_signupFormKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('wait...'),
-                          backgroundColor: Colors.pink,
+                Consumer<AuthViewModel>(
+                  builder: (context, authViewModel, child) {
+                    bool isLoading = authViewModel.isLoading;
+
+                    return ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              if (_signupFormKey.currentState!.validate()) {
+                                bool success = await authViewModel.signup(
+                                  firstName: _firstNameController.text.trim(),
+                                  lastName: _lastNameController.text.trim(),
+                                  email: _emailController.text.trim(),
+                                  password: _passwordController.text,
+                                );
+
+                                if (!context.mounted) return;
+
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Account created! Please log in.'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const LoginScreen(),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        authViewModel.errorMessage ?? 'Signup failed.',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      );
-                    }
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              "Sign Up",
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                    );
                   },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    "Sign Up",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
                 ),
 
                 const SizedBox(height: 16),
@@ -217,6 +260,3 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 }
-
-
-

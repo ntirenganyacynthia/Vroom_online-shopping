@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; 
+import 'package:vroom/screens/home_screen.dart'; 
 import 'package:vroom/screens/signup_screen.dart';
+import 'package:vroom/view_model/auth_viewmodel.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,13 +13,13 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _loginFormKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _hidePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -53,18 +56,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
 
                 TextFormField(
-                  controller: _emailController,
+                  controller: _usernameController,
                   decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
+                    labelText: 'Username',
+                    prefixIcon: Icon(Icons.person_outline),
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your email address';
+                      return 'Please enter your username';
                     }
-                    if (!value.contains('@')) {
-                      return 'Enter a valid email address';
+                    if (value.trim().length < 3) {
+                      return 'Username must be at least 3 characters long';
                     }
                     return null;
                   },
@@ -104,33 +107,68 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 24),
+                
+             
+                Consumer<AuthViewModel>(
+                  builder: (context, authViewModel, child) {
+                    bool isLoading = authViewModel.isLoading; 
 
-                ElevatedButton(
-                  onPressed: () {
-                    if (_loginFormKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Logging in...'),
-                          backgroundColor: Colors.green,
+                    return ElevatedButton(
+                      onPressed: isLoading 
+                        ? null 
+                        : () async {
+                            if (_loginFormKey.currentState!.validate()) {
+                              bool success = await authViewModel.login(
+                                _usernameController.text.trim(),
+                                _passwordController.text,
+                              );
+
+                              if (!context.mounted) return;
+
+                              if (success) {
+                                Navigator.pushReplacement(
+                                  context, 
+                                  MaterialPageRoute(
+                                    builder: (context) => const HomeScreen(),
+                                  ),
+                                );
+                              } else {
+                                const snackBar = SnackBar(
+                                  content: Text('Invalid username or password.'),
+                                  backgroundColor: Colors.red,
+                                );
+                               
+                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                              }
+                            }
+                          },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        disabledBackgroundColor: Colors.purple.withValues(alpha: 0.6), 
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      );
-                    }
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              "Login",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                    );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    "Login",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
                 ),
 
                 const SizedBox(height: 16),
